@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -20,6 +21,7 @@ func GET() Spec {
 		Outputs: []Pin{Pin{"response", STRING}},
 		Kernel: func(in, out, internal MessageMap, s Source, i chan Interrupt) Interrupt {
 
+			// TODO allow null headers
 			url, ok := in[0].(string)
 			if !ok {
 				out[0] = NewError("HTTPGET requires url to be a string")
@@ -28,9 +30,10 @@ func GET() Spec {
 
 			// header should be provided as a map like {"Content-Type": "application/x-www-form-urlencoded"}
 			// TODO
-			header, ok := in[1].(map[string]string)
+			header, ok := in[1].(map[string]interface{})
 			if !ok {
 				out[0] = NewError("HTTPGET requres headers to be a map")
+				log.Println("RECEIVED", in[1], reflect.TypeOf(in[1]))
 				return nil
 			}
 
@@ -61,9 +64,19 @@ func GET() Spec {
 			}
 			for key, value := range header {
 				if key == "Host" {
-					req.Host = value
+					host, ok := value.(string)
+					if !ok {
+						out[0] = NewError("Invalid Host passed to GET")
+						return nil
+					}
+					req.Host = host
 				} else {
-					req.Header.Set(key, value)
+					valueString, ok := value.(string)
+					if !ok {
+						out[0] = NewError("Invalid header value passed to GET")
+						return nil
+					}
+					req.Header.Set(key, valueString)
 				}
 			}
 
