@@ -192,11 +192,12 @@ func Head() Spec {
 				out[0] = NewError("head requires an array")
 				return nil
 			}
-			// if we get an empty array, return nothing
+			// an empty array is an error
 			if len(arr) == 0 {
+				out[0] = NewError("head requires there be at least one element in the array")
 				return nil
 			}
-			// otherwise, the first output is the head
+			// otherwise, emit the first element of the array
 			out[0] = arr[0]
 			return nil
 		},
