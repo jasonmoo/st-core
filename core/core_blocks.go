@@ -179,8 +179,7 @@ func Identity() Spec {
 	}
 }
 
-// Head emits the first element of the inbound array on one output,
-//and the tail of the array on the other.
+// Head emits the first element of the inbound array. If the array is empty, head emits nothing (sinks the message)
 func Head() Spec {
 	return Spec{
 		Name:    "head",
@@ -192,9 +191,8 @@ func Head() Spec {
 				out[0] = NewError("head requires an array")
 				return nil
 			}
-			// an empty array is an error
+			// an empty array returns nothing (has no head)
 			if len(arr) == 0 {
-				out[0] = NewError("head requires there be at least one element in the array")
 				return nil
 			}
 			// otherwise, emit the first element of the array
@@ -204,7 +202,7 @@ func Head() Spec {
 	}
 }
 
-// Tail emits the end of an array minus the first element.
+// Tail emits the end of an array minus the first element. If the array is empty, tail emits nothing (sinks the message)
 func Tail() Spec {
 	return Spec{
 		Name:    "tail",
@@ -216,6 +214,7 @@ func Tail() Spec {
 				out[0] = NewError("tail requires an array")
 				return nil
 			}
+			// an empty array emits nothing (has no tail)
 			if len(arr) == 0 {
 				return nil
 			}
