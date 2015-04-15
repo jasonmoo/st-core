@@ -25,6 +25,7 @@ func GetLibrary() map[string]Spec {
 		// mechanisms
 		Delay(),
 		Set(),
+		Get(),
 		Log(),
 		Sink(),
 		Latch(),

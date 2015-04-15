@@ -185,15 +185,40 @@ func Head() Spec {
 	return Spec{
 		Name:    "head",
 		Inputs:  []Pin{Pin{"in", ARRAY}},
-		Outputs: []Pin{Pin{"head", ANY}, Pin{"tail", ARRAY}},
+		Outputs: []Pin{Pin{"head", ANY}},
 		Kernel: func(in, out, internal MessageMap, s Source, i chan Interrupt) Interrupt {
 			arr, ok := in[0].([]interface{})
 			if !ok {
 				out[0] = NewError("head requires an array")
 				return nil
 			}
+			// if we get an empty array, return nothing
+			if len(arr) == 0 {
+				return nil
+			}
+			// otherwise, the first output is the head
 			out[0] = arr[0]
-			out[1] = arr[1:len(arr)]
+			return nil
+		},
+	}
+}
+
+// Tail emits the end of an array minus the first element.
+func Tail() Spec {
+	return Spec{
+		Name:    "tail",
+		Inputs:  []Pin{Pin{"in", ARRAY}},
+		Outputs: []Pin{Pin{"tail", ANY}},
+		Kernel: func(in, out, internal MessageMap, s Source, i chan Interrupt) Interrupt {
+			arr, ok := in[0].([]interface{})
+			if !ok {
+				out[0] = NewError("tail requires an array")
+				return nil
+			}
+			if len(arr) == 0 {
+				return nil
+			}
+			out[0] = arr[1:]
 			return nil
 		},
 	}
@@ -211,26 +236,6 @@ func Len() Spec {
 				return nil
 			}
 			out[0] = float64(len(arr))
-			return nil
-		},
-	}
-}
-
-// Tail emits the last element of the inbound array on one output,
-//and the head of the array on the other.
-func Tail() Spec {
-	return Spec{
-		Name:    "tail",
-		Inputs:  []Pin{Pin{"in", ARRAY}},
-		Outputs: []Pin{Pin{"tail", ANY}, Pin{"head", ARRAY}},
-		Kernel: func(in, out, internal MessageMap, s Source, i chan Interrupt) Interrupt {
-			arr, ok := in[0].([]interface{})
-			if !ok {
-				out[0] = NewError("tail requires an array")
-				return nil
-			}
-			out[0] = arr[len(arr)]
-			out[1] = arr[0 : len(arr)-1]
 			return nil
 		},
 	}
