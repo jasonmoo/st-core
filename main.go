@@ -9,14 +9,11 @@ import (
 
 func main() {
 
-	s := server.NewServer()
-	r := s.NewRouter()
-
-	http.Handle("/", r)
-
 	log.Println("serving on 7071")
-	err := http.ListenAndServe(":7071", nil)
+
+	err := http.ListenAndServe(":7071", server.NewServer().NewRouter())
 	if err != nil {
 		log.Panicf(err.Error())
 	}
+
 }
