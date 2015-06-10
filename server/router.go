@@ -6,239 +6,55 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *Server) NewRouter() *mux.Router {
-	type Route struct {
+func (s *Server) NewRouter() http.Handler {
+
+	var routes = []struct {
 		Name        string
 		Pattern     string
 		Method      string
 		HandlerFunc http.HandlerFunc
+	}{
+		{"UpdateSocket", "/updates", "GET", s.UpdateSocketHandler},
+		{"BlockLibrary", "/blocks/library", "GET", s.BlockLibraryHandler},
+		{"SourceLibrary", "/sources/library", "GET", s.SourceLibraryHandler},
+		{"GroupIndex", "/groups", "GET", s.GroupIndexHandler},
+		{"Group", "/groups/{id}", "GET", s.GroupHandler},
+		{"GroupCreate", "/groups", "POST", s.GroupCreateHandler},
+		{"GroupExport", "/groups/{id}/export", "GET", s.GroupExportHandler},
+		{"GroupImport", "/groups/{id}/import", "POST", s.GroupImportHandler},
+		{"GroupModifyLabel", "/groups/{id}/label", "PUT", s.GroupModifyLabelHandler},
+		{"GroupModifyAllChildren", "/groups/{id}/children", "PUT", s.GroupModifyAllChildrenHandler},
+		{"GroupModifyChild", "/groups/{id}/children/{node_id}", "PUT", s.GroupModifyChildHandler},
+		{"GroupPosition", "/groups/{id}/position", "PUT", s.GroupPositionHandler},
+		{"GroupDelete", "/groups/{id}", "DELETE", s.GroupDeleteHandler},
+		{"BlockIndex", "/blocks", "GET", s.BlockIndexHandler},
+		{"Block", "/blocks/{id}", "GET", s.BlockHandler},
+		{"BlockCreate", "/blocks", "POST", s.BlockCreateHandler},
+		{"BlockDelete", "/blocks/{id}", "DELETE", s.BlockDeleteHandler},
+		{"BlockModifyName", "/blocks/{id}/label", "PUT", s.BlockModifyNameHandler},
+		{"BlockModifyRoute", "/blocks/{id}/routes/{index}", "PUT", s.BlockModifyRouteHandler},
+		{"BlockModifyPosition", "/blocks/{id}/position", "PUT", s.BlockModifyPositionHandler},
+		{"ConnectionIndex", "/connections", "GET", s.ConnectionIndexHandler},
+		{"Connection", "/connections/{id}", "GET", s.ConnectionHandler},
+		{"ConnectionCreate", "/connections", "POST", s.ConnectionCreateHandler},
+		{"ConnectionModifyCoordinates", "/connections/{id}/coordinates", "PUT", s.ConnectionModifyCoordinates},
+		{"ConnectionDelete", "/connections/{id}", "DELETE", s.ConnectionDeleteHandler},
+		{"SourceCreate", "/sources", "POST", s.SourceCreateHandler},
+		{"SourceIndex", "/sources", "GET", s.SourceIndexHandler},
+		{"SourceModifyName", "/sources/{id}/label", "PUT", s.SourceModifyNameHandler},
+		{"SourceModifyPosition", "/sources/{id}/position", "PUT", s.SourceModifyPositionHandler},
+		{"SourceModify", "/sources/{id}/params", "PUT", s.SourceModifyHandler},
+		{"SourceGetValue", "/sources/{id}/value", "GET", s.SourceGetValueHandler},
+		{"SourceSetValue", "/sources/{id}/value", "PUT", s.SourceSetValueHandler},
+		{"Source", "/sources/{id}", "GET", s.SourceHandler},
+		{"Source", "/sources/{id}", "DELETE", s.SourceDeleteHandler},
+		{"LinkIndex", "/links", "GET", s.LinkIndexHandler},
+		{"LinkCreate", "/links", "POST", s.LinkCreateHandler},
+		{"LinkDelete", "/links/{id}", "DELETE", s.LinkDeleteHandler},
 	}
 
-	routes := []Route{
-		Route{
-			"UpdateSocket",
-			"/updates",
-			"GET",
-			s.UpdateSocketHandler,
-		},
-		Route{
-			"BlockLibrary",
-			"/blocks/library",
-			"GET",
-			s.BlockLibraryHandler,
-		},
-		Route{
-			"SourceLibrary",
-			"/sources/library",
-			"GET",
-			s.SourceLibraryHandler,
-		},
-		Route{
-			"GroupIndex",
-			"/groups",
-			"GET",
-			s.GroupIndexHandler,
-		},
-		Route{
-			"Group",
-			"/groups/{id}",
-			"GET",
-			s.GroupHandler,
-		},
-		Route{
-			"GroupCreate",
-			"/groups",
-			"POST",
-			s.GroupCreateHandler,
-		},
-		Route{
-			"GroupExport",
-			"/groups/{id}/export",
-			"GET",
-			s.GroupExportHandler,
-		},
-		Route{
-			"GroupImport",
-			"/groups/{id}/import",
-			"POST",
-			s.GroupImportHandler,
-		},
-		Route{
-			"GroupModifyLabel",
-			"/groups/{id}/label",
-			"PUT",
-			s.GroupModifyLabelHandler,
-		},
-		Route{
-			"GroupModifyAllChildren",
-			"/groups/{id}/children",
-			"PUT",
-			s.GroupModifyAllChildrenHandler,
-		},
-		Route{
-			"GroupModifyChild",
-			"/groups/{id}/children/{node_id}",
-			"PUT",
-			s.GroupModifyChildHandler,
-		},
-		Route{
-			"GroupPosition",
-			"/groups/{id}/position",
-			"PUT",
-			s.GroupPositionHandler,
-		},
-		Route{
-			"GroupDelete",
-			"/groups/{id}",
-			"DELETE",
-			s.GroupDeleteHandler,
-		},
-		Route{
-			"BlockIndex",
-			"/blocks",
-			"GET",
-			s.BlockIndexHandler,
-		},
-		Route{
-			"Block",
-			"/blocks/{id}",
-			"GET",
-			s.BlockHandler,
-		},
-		Route{
-			"BlockCreate",
-			"/blocks",
-			"POST",
-			s.BlockCreateHandler,
-		},
-		Route{
-			"BlockDelete",
-			"/blocks/{id}",
-			"DELETE",
-			s.BlockDeleteHandler,
-		},
-		Route{
-			"BlockModifyName",
-			"/blocks/{id}/label",
-			"PUT",
-			s.BlockModifyNameHandler,
-		},
-		Route{
-			"BlockModifyRoute",
-			"/blocks/{id}/routes/{index}",
-			"PUT",
-			s.BlockModifyRouteHandler,
-		},
-		Route{
-			"BlockModifyPosition",
-			"/blocks/{id}/position",
-			"PUT",
-			s.BlockModifyPositionHandler,
-		},
-		Route{
-			"ConnectionIndex",
-			"/connections",
-			"GET",
-			s.ConnectionIndexHandler,
-		},
-		Route{
-			"Connection",
-			"/connections/{id}",
-			"GET",
-			s.ConnectionHandler,
-		},
-		Route{
-			"ConnectionCreate",
-			"/connections",
-			"POST",
-			s.ConnectionCreateHandler,
-		},
-		Route{
-			"ConnectionModifyCoordinates",
-			"/connections/{id}/coordinates",
-			"PUT",
-			s.ConnectionModifyCoordinates,
-		},
-		Route{
-			"ConnectionDelete",
-			"/connections/{id}",
-			"DELETE",
-			s.ConnectionDeleteHandler,
-		},
-		Route{
-			"SourceCreate",
-			"/sources",
-			"POST",
-			s.SourceCreateHandler,
-		},
-		Route{
-			"SourceIndex",
-			"/sources",
-			"GET",
-			s.SourceIndexHandler,
-		},
-		Route{
-			"SourceModifyName",
-			"/sources/{id}/label",
-			"PUT",
-			s.SourceModifyNameHandler,
-		},
-		Route{
-			"SourceModifyPosition",
-			"/sources/{id}/position",
-			"PUT",
-			s.SourceModifyPositionHandler,
-		},
-		Route{
-			"SourceModify",
-			"/sources/{id}/params",
-			"PUT",
-			s.SourceModifyHandler,
-		},
-		Route{
-			"SourceGetValue",
-			"/sources/{id}/value",
-			"GET",
-			s.SourceGetValueHandler,
-		},
-		Route{
-			"SourceSetValue",
-			"/sources/{id}/value",
-			"PUT",
-			s.SourceSetValueHandler,
-		},
-		Route{
-			"Source",
-			"/sources/{id}",
-			"GET",
-			s.SourceHandler,
-		},
-		Route{
-			"Source",
-			"/sources/{id}",
-			"DELETE",
-			s.SourceDeleteHandler,
-		},
-		Route{
-			"LinkIndex",
-			"/links",
-			"GET",
-			s.LinkIndexHandler,
-		},
-		Route{
-			"LinkCreate",
-			"/links",
-			"POST",
-			s.LinkCreateHandler,
-		},
-		Route{
-			"LinkDelete",
-			"/links/{id}",
-			"DELETE",
-			s.LinkDeleteHandler,
-		},
-	}
 	router := mux.NewRouter().StrictSlash(true)
+
 	for _, route := range routes {
 		var handler http.Handler
 

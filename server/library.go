@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/nytlabs/st-core/core"
@@ -27,11 +26,7 @@ func (s *Server) BlockLibraryHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(l); err != nil {
-		panic(err)
-	}
+	writeJSON(w, l, http.StatusOK)
 }
 
 func (s *Server) SourceLibraryHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,9 +42,5 @@ func (s *Server) SourceLibraryHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(l); err != nil {
-		panic(err)
-	}
+	writeJSON(w, l, http.StatusOK)
 }

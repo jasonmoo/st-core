@@ -4,10 +4,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/nytlabs/st-core/server"
+	"github.com/jasonmoo/st-core/server"
 )
 
 func main() {
+
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 
 	log.Println("serving on 7071")
 

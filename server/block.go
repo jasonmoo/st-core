@@ -59,18 +59,13 @@ func (s *Server) ListBlocks() []BlockLedger {
 func (s *Server) BlockIndexHandler(w http.ResponseWriter, r *http.Request) {
 	s.Lock()
 	defer s.Unlock()
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := json.NewEncoder(w).Encode(s.ListBlocks()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	writeJSON(w, s.ListBlocks(), http.StatusOK)
 }
 
 func (s *Server) BlockHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -79,36 +74,31 @@ func (s *Server) BlockHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, ok := s.blocks[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find block"})
+		writeJSON(w, Error{"could not find block"}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, b)
+	writeJSON(w, b, http.StatusOK)
 	return
 }
 
 func (s *Server) BlockModifyPositionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var p Position
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read JSON"})
+		writeJSON(w, Error{"could not read JSON"}, http.StatusBadRequest)
 		return
 	}
 
@@ -117,8 +107,7 @@ func (s *Server) BlockModifyPositionHandler(w http.ResponseWriter, r *http.Reque
 
 	b, ok := s.blocks[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find block"})
+		writeJSON(w, Error{"could not find block"}, http.StatusBadRequest)
 		return
 	}
 
@@ -169,16 +158,14 @@ func (s *Server) CreateBlock(p ProtoBlock) (*BlockLedger, error) {
 func (s *Server) BlockCreateHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var m ProtoBlock
 	err = json.Unmarshal(body, &m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"no ID supplied"})
+		writeJSON(w, Error{"no ID supplied"}, http.StatusBadRequest)
 		return
 	}
 
@@ -187,27 +174,23 @@ func (s *Server) BlockCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, err := s.CreateBlock(m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, b)
+	writeJSON(w, b, http.StatusOK)
 }
 
 func (s *Server) BlockModifyNameHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
@@ -216,19 +199,18 @@ func (s *Server) BlockModifyNameHandler(w http.ResponseWriter, r *http.Request) 
 
 	_, ok := s.blocks[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"block not found"})
+		writeJSON(w, Error{"block not found"}, http.StatusBadRequest)
 		return
 	}
 
 	var label string
 	err = json.Unmarshal(body, &label)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not unmarshal value"})
+		writeJSON(w, Error{"could not unmarshal value"}, http.StatusBadRequest)
 		return
 	}
 
+	// TODO: suspect
 	s.blocks[id].Label = label
 
 	s.websocketBroadcast(Update{Action: UPDATE, Type: BLOCK, Data: wsBlock{wsLabel{wsId{id}, label}}})
@@ -270,8 +252,7 @@ func (s *Server) DeleteBlock(id int) error {
 func (s *Server) BlockDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -280,8 +261,7 @@ func (s *Server) BlockDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.DeleteBlock(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -292,37 +272,32 @@ func (s *Server) BlockModifyRouteHandler(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	id, err := getIDFromMux(vars)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	routes, ok := vars["index"]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"no route index supplied"})
+		writeJSON(w, Error{"no route index supplied"}, http.StatusBadRequest)
 		return
 	}
 
 	route, err := strconv.Atoi(routes)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
-	var v *core.InputValue
-	err = json.Unmarshal(body, &v)
+	v := &core.InputValue{}
+	err = json.Unmarshal(body, v)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not unmarshal value"})
+		writeJSON(w, Error{"could not unmarshal value"}, http.StatusBadRequest)
 		return
 	}
 
@@ -331,8 +306,7 @@ func (s *Server) BlockModifyRouteHandler(w http.ResponseWriter, r *http.Request)
 
 	err = s.ModifyBlockRoute(id, route, v)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -356,6 +330,7 @@ func (s *Server) ModifyBlockRoute(id int, route int, v *core.InputValue) error {
 		return err
 	}
 
+	// TODO: this seems suspect
 	s.blocks[id].Inputs[route].Value = value
 
 	s.websocketBroadcast(Update{Action: UPDATE, Type: ROUTE, Data: wsRouteModify{ConnectionNode{id, route}, value}})

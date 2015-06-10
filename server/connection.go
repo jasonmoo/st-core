@@ -41,19 +41,14 @@ func (s *Server) ConnectionIndexHandler(w http.ResponseWriter, r *http.Request) 
 
 	c := s.ListConnections()
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(c); err != nil {
-		panic(err)
-	}
+	writeJSON(w, c, http.StatusOK)
 }
 
 // CreateConnectionHandler responds to a POST request to instantiate a new connection
 func (s *Server) ConnectionCreateHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -65,13 +60,11 @@ func (s *Server) ConnectionCreateHandler(w http.ResponseWriter, r *http.Request)
 
 	nc, err := s.CreateConnection(newConn)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, nc)
+	writeJSON(w, nc, http.StatusOK)
 }
 
 func (s *Server) CreateConnection(newConn ProtoConnection) (*ConnectionLedger, error) {
@@ -190,20 +183,17 @@ func (s *Server) ConnectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	conn, ok := s.connections[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find connection" + string(id)})
+		writeJSON(w, Error{"could not find connection" + string(id)}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, conn)
+	writeJSON(w, conn, http.StatusOK)
 }
 
 func (s *Server) ConnectionModifyCoordinates(w http.ResponseWriter, r *http.Request) {
@@ -246,8 +236,7 @@ func (s *Server) DeleteConnection(id int) error {
 func (s *Server) ConnectionDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -256,8 +245,7 @@ func (s *Server) ConnectionDeleteHandler(w http.ResponseWriter, r *http.Request)
 
 	err = s.DeleteConnection(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 

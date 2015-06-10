@@ -7,13 +7,18 @@ import (
 	"strconv"
 )
 
-func writeJSON(w http.ResponseWriter, v interface{}) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	err := json.NewEncoder(w).Encode(v)
+func writeJSON(w http.ResponseWriter, v interface{}, code int) {
+
+	jsonData, err := json.Marshal(v)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	return
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(code)
+	w.Write(jsonData)
+
 }
 
 func getIDFromMux(vars map[string]string) (id int, err error) {

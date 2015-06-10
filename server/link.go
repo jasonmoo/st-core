@@ -83,18 +83,13 @@ func (s *Server) LinkIndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	c := s.listLinks()
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(c); err != nil {
-		panic(err)
-	}
+	writeJSON(w, c, http.StatusOK)
 }
 
 func (s *Server) LinkCreateHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -106,20 +101,17 @@ func (s *Server) LinkCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	nl, err := s.CreateLink(newLink)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, nl)
+	writeJSON(w, nl, http.StatusOK)
 }
 
 func (s *Server) LinkDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -128,8 +120,7 @@ func (s *Server) LinkDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.DeleteLink(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 

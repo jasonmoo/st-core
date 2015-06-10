@@ -60,11 +60,7 @@ func (s *Server) ListGroups() []Group {
 }
 
 func (s *Server) GroupIndexHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(s.ListGroups()); err != nil {
-		panic(err)
-	}
+	writeJSON(w, s.ListGroups(), http.StatusOK)
 }
 
 func (s *Server) DetachChild(g Node) error {
@@ -131,16 +127,14 @@ func (s *Server) AddChildToGroup(id int, n Node) error {
 func (s *Server) GroupCreateHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var g ProtoGroup
 	err = json.Unmarshal(body, &g)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read JSON"})
+		writeJSON(w, Error{"could not read JSON"}, http.StatusBadRequest)
 		return
 	}
 
@@ -149,13 +143,11 @@ func (s *Server) GroupCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	newGroup, err := s.CreateGroup(g)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, newGroup)
+	writeJSON(w, newGroup, http.StatusOK)
 }
 
 func (s *Server) CreateGroup(g ProtoGroup) (*Group, error) {
@@ -235,8 +227,7 @@ func (s *Server) GroupDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -245,8 +236,7 @@ func (s *Server) GroupDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.DeleteGroup(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -257,27 +247,23 @@ func (s *Server) GroupDeleteHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GroupHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 	s.Lock()
 	defer s.Unlock()
 	group, ok := s.groups[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find group"})
+		writeJSON(w, Error{"could not find group"}, http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, group)
+	writeJSON(w, group, http.StatusOK)
 }
 
 func (s *Server) GroupExportHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -285,13 +271,11 @@ func (s *Server) GroupExportHandler(w http.ResponseWriter, r *http.Request) {
 	defer s.Unlock()
 	p, err := s.Export(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	writeJSON(w, p)
+	writeJSON(w, p, http.StatusOK)
 }
 
 func (s *Server) ExportGroup(id int) (*Pattern, error) {
@@ -374,23 +358,20 @@ func (s *Server) Export(id int) (*Pattern, error) {
 func (s *Server) GroupImportHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	var p Pattern
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -399,8 +380,7 @@ func (s *Server) GroupImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.ImportGroup(id, p)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -528,23 +508,20 @@ func (s *Server) ImportGroup(id int, p Pattern) error {
 func (s *Server) GroupModifyLabelHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	var l string
 	err = json.Unmarshal(body, &l)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not unmarshal: " + string(body) + ""})
+		writeJSON(w, Error{"could not unmarshal: " + string(body) + ""}, http.StatusBadRequest)
 		return
 	}
 
@@ -553,8 +530,7 @@ func (s *Server) GroupModifyLabelHandler(w http.ResponseWriter, r *http.Request)
 
 	g, ok := s.groups[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"no block found"})
+		writeJSON(w, Error{"no block found"}, http.StatusBadRequest)
 		return
 	}
 
@@ -571,28 +547,24 @@ func (s *Server) GroupModifyChildHandler(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	id, err := getIDFromMux(vars)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	childs, ok := vars["node_id"]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"no ID supplied"})
+		writeJSON(w, Error{"no ID supplied"}, http.StatusBadRequest)
 		return
 	}
 
 	child, err := strconv.Atoi(childs)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	if id == child {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"cannot add group as member of itself"})
+		writeJSON(w, Error{"cannot add group as member of itself"}, http.StatusBadRequest)
 		return
 	}
 
@@ -602,8 +574,7 @@ func (s *Server) GroupModifyChildHandler(w http.ResponseWriter, r *http.Request)
 	var n Node
 
 	if _, ok := s.groups[id]; !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find id"})
+		writeJSON(w, Error{"could not find id"}, http.StatusBadRequest)
 		return
 	}
 
@@ -620,15 +591,13 @@ func (s *Server) GroupModifyChildHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if n == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find id"})
+		writeJSON(w, Error{"could not find id"}, http.StatusBadRequest)
 		return
 	}
 
 	err = s.AddChildToGroup(id, n)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -638,23 +607,20 @@ func (s *Server) GroupModifyChildHandler(w http.ResponseWriter, r *http.Request)
 func (s *Server) GroupPositionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var p Position
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read JSON"})
+		writeJSON(w, Error{"could not read JSON"}, http.StatusBadRequest)
 		return
 	}
 
@@ -663,8 +629,7 @@ func (s *Server) GroupPositionHandler(w http.ResponseWriter, r *http.Request) {
 
 	g, ok := s.groups[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find group"})
+		writeJSON(w, Error{"could not find group"}, http.StatusBadRequest)
 		return
 	}
 

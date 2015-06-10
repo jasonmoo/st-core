@@ -35,9 +35,10 @@ func (c *socket) write(mt int, payload []byte) error {
 func (s *Server) websocketBroadcast(v interface{}) {
 	out, err := json.Marshal(v)
 	if err != nil {
-		panic(err)
+		log.Printf("JSON Marshal error on Websocket Broadcast. %s", err)
+	} else {
+		s.broadcast <- out
 	}
-	s.broadcast <- out
 }
 
 func (s *Server) websocketRouter() {

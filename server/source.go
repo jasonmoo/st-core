@@ -53,31 +53,23 @@ func (s *Server) ListSources() []SourceLedger {
 func (s *Server) SourceIndexHandler(w http.ResponseWriter, r *http.Request) {
 	s.Lock()
 	defer s.Unlock()
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(s.ListSources()); err != nil {
-		panic(err)
-	}
+	writeJSON(w, s.ListSources(), http.StatusOK)
 }
 
 func (s *Server) SourceHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 	s.Lock()
 	defer s.Unlock()
 	source, ok := s.sources[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find source"})
+		writeJSON(w, Error{"could not find source"}, http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, source)
+	writeJSON(w, source, http.StatusOK)
 }
 
 func (s *Server) CreateSource(p ProtoSource) (*SourceLedger, error) {
@@ -143,16 +135,14 @@ func (s *Server) DeleteSource(id int) error {
 func (s *Server) SourceCreateHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var m ProtoSource
 	err = json.Unmarshal(body, &m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"no ID supplied"})
+		writeJSON(w, Error{"no ID supplied"}, http.StatusBadRequest)
 		return
 	}
 
@@ -161,13 +151,11 @@ func (s *Server) SourceCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, err := s.CreateSource(m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	writeJSON(w, b)
+	writeJSON(w, b, http.StatusOK)
 }
 
 func (s *Server) ModifySource(id int, m map[string]string) error {
@@ -196,23 +184,20 @@ func (s *Server) ModifySource(id int, m map[string]string) error {
 func (s *Server) SourceModifyHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var m map[string]string
 	err = json.Unmarshal(body, &m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"no ID supplied"})
+		writeJSON(w, Error{"no ID supplied"}, http.StatusBadRequest)
 		return
 	}
 
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -221,8 +206,7 @@ func (s *Server) SourceModifyHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.ModifySource(id, m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -231,8 +215,7 @@ func (s *Server) SourceModifyHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) SourceDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -241,8 +224,7 @@ func (s *Server) SourceDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.DeleteSource(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
@@ -251,8 +233,7 @@ func (s *Server) SourceDeleteHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) SourceGetValueHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -261,12 +242,10 @@ func (s *Server) SourceGetValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	val, err := s.GetSourceValue(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(val)
 }
@@ -274,23 +253,20 @@ func (s *Server) SourceGetValueHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) SourceModifyPositionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
 	var p Position
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read JSON"})
+		writeJSON(w, Error{"could not read JSON"}, http.StatusBadRequest)
 		return
 	}
 
@@ -299,8 +275,7 @@ func (s *Server) SourceModifyPositionHandler(w http.ResponseWriter, r *http.Requ
 
 	b, ok := s.sources[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not find block"})
+		writeJSON(w, Error{"could not find block"}, http.StatusBadRequest)
 		return
 	}
 
@@ -313,15 +288,13 @@ func (s *Server) SourceModifyPositionHandler(w http.ResponseWriter, r *http.Requ
 func (s *Server) SourceModifyNameHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
@@ -330,16 +303,14 @@ func (s *Server) SourceModifyNameHandler(w http.ResponseWriter, r *http.Request)
 
 	_, ok := s.sources[id]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"block not found"})
+		writeJSON(w, Error{"block not found"}, http.StatusBadRequest)
 		return
 	}
 
 	var label string
 	err = json.Unmarshal(body, &label)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not unmarshal value"})
+		writeJSON(w, Error{"could not unmarshal value"}, http.StatusBadRequest)
 		return
 	}
 
@@ -352,15 +323,13 @@ func (s *Server) SourceModifyNameHandler(w http.ResponseWriter, r *http.Request)
 func (s *Server) SourceSetValueHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := getIDFromMux(mux.Vars(r))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, err)
+		writeJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{"could not read request body"})
+		writeJSON(w, Error{"could not read request body"}, http.StatusBadRequest)
 		return
 	}
 
@@ -369,8 +338,7 @@ func (s *Server) SourceSetValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.SetSourceValue(id, body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, Error{err.Error()})
+		writeJSON(w, Error{err.Error()}, http.StatusBadRequest)
 		return
 	}
 
